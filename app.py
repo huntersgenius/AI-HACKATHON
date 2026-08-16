@@ -22,6 +22,7 @@ HOOK_MODULES = [
 ]
 ANALYZER_MODULES = [
     "analyzers.rule_analyzer",
+    "analyzers.llm_analyzer",
 ]
 NOTIFIER_MODULES = []
 

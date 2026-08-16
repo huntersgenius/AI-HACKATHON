@@ -84,9 +84,11 @@ class Config:
     PROMPTS_DIR = str(BASE_DIR / "prompts")
 
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-    LLM_MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-5")
+    LLM_MODEL = os.environ.get("LLM_MODEL", "claude-opus-5")
     LLM_TIMEOUT_SECONDS = _env_int("LLM_TIMEOUT_SECONDS", 10)
     TRIAGE_PROMPT = os.environ.get("TRIAGE_PROMPT", "triage_v1.txt")
+    TRIAGE_CASE_PROMPT = os.environ.get(
+        "TRIAGE_CASE_PROMPT", "triage_v1_case.txt")
 
     FEATURES = _resolve_features()
 

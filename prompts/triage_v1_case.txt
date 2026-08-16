@@ -1,0 +1,9 @@
+## Bemor haqida
+
+Tashxis: $diagnosis
+Kuzatuv kuni: $day_number-kun
+Savol turi: $question_key
+Berilgan savol: $question_text
+Bemor javobi: $answer_text
+
+Shu javobni yuqoridagi qoidalar boʻyicha baholang va faqat JSON qaytaring.
