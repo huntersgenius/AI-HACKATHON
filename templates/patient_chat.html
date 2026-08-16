@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ patient['full_name'] }} — suhbat{% endblock %}
+
+{% block header_extra %}
+  <span class="text-sm text-slate-600">{{ patient['full_name'] }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl border border-slate-200 flex flex-col h-[70vh]"
+     data-patient-id="{{ patient['id'] }}" id="chat-root">
+
+  <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+    <div>
+      <div class="font-medium">Hamroh xizmati</div>
+      <div class="text-xs text-slate-500" id="chat-subtitle">Yuklanmoqda…</div>
+    </div>
+    <span class="text-xs text-slate-400" id="chat-connection">•</span>
+  </div>
+
+  <div id="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+    <p class="text-sm text-slate-400 text-center" id="empty-hint">
+      Hozircha xabar yo'q. Shifokoringiz savol yuborganda shu yerda ko'rinadi.
+    </p>
+  </div>
+
+  <form id="chat-form" class="border-t border-slate-200 p-3 flex gap-2">
+    <input id="chat-input" type="text" autocomplete="off"
+           class="flex-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+           placeholder="Javobingizni yozing…">
+    <button type="submit" id="chat-send"
+            class="rounded-lg bg-teal-600 text-white px-4 py-2 font-medium hover:bg-teal-700 disabled:opacity-50">
+      Yuborish
+    </button>
+  </form>
+
+  <p id="chat-error" class="hidden text-sm text-red-600 px-4 pb-3"></p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/patient_chat.js') }}"></script>
+{% endblock %}

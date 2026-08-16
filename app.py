@@ -23,7 +23,9 @@ NOTIFIER_MODULES = []
 
 # (import path, url_prefix or None)
 BLUEPRINTS = [
+    ("routes.pages:bp", None),
     ("routes.demo_api:bp", "/api/v1/demo"),
+    ("routes.patient_api:bp", "/api/v1/patients"),
 ]
 
 

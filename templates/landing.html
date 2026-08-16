@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Hamroh — rolni tanlang{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">Rolni tanlang</h1>
+<p class="text-slate-600 mb-6">Demo uchun: kim sifatida kirmoqchisiz?</p>
+
+<section class="mb-8">
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">Bemor</h2>
+  <div class="grid gap-3 sm:grid-cols-2">
+    {% for p in patients %}
+      <a href="{{ url_for('pages.patient_chat', pid=p['id']) }}"
+         class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-teal-500 hover:shadow-sm transition">
+        <div class="font-medium">{{ p['full_name'] }}</div>
+        <div class="text-sm text-slate-500">{{ p['diagnosis'] }}</div>
+        <div class="text-xs text-slate-400 mt-1">{{ p['current_day'] }}-kun</div>
+      </a>
+    {% else %}
+      <p class="text-slate-500">Bemorlar topilmadi.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">Shifokor</h2>
+  <div class="grid gap-3 sm:grid-cols-2">
+    {% for d in doctors %}
+      <div class="block bg-white rounded-xl border border-slate-200 p-4 opacity-60">
+        <div class="font-medium">{{ d['full_name'] }}</div>
+        <div class="text-sm text-slate-500">{{ d['clinic_name'] }}</div>
+        <div class="text-xs text-slate-400 mt-1">Panel tayyorlanmoqda</div>
+      </div>
+    {% else %}
+      <p class="text-slate-500">Shifokorlar topilmadi.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
