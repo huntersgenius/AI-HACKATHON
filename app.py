@@ -22,7 +22,9 @@ ANALYZER_MODULES = []
 NOTIFIER_MODULES = []
 
 # (import path, url_prefix or None)
-BLUEPRINTS = []
+BLUEPRINTS = [
+    ("routes.demo_api:bp", "/api/v1/demo"),
+]
 
 
 def _load_modules(app, names, kind):
