@@ -33,6 +33,7 @@ BLUEPRINTS = [
     ("routes.demo_api:bp", "/api/v1/demo"),
     ("routes.patient_api:bp", "/api/v1/patients"),
     ("routes.doctor_api:bp", "/api/v1/doctors"),
+    ("routes.alert_api:bp", "/api/v1/alerts"),
 ]
 
 
@@ -72,6 +73,11 @@ def create_app(config_object=Config):
 
     _register_blueprints(app)
     register_error_handlers(app)
+
+    @app.context_processor
+    def inject_features():
+        """Templates gate unfinished UI with features.enabled('...')."""
+        return {"features": features}
 
     @app.get("/health")
     def health():

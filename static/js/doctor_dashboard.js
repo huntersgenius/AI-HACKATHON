@@ -116,8 +116,55 @@
     body.appendChild(title);
     body.appendChild(when);
 
+    const resolve = document.createElement("button");
+    resolve.className =
+      "ml-auto text-xs rounded-lg border border-slate-300 bg-white px-2 py-1 hover:bg-slate-100";
+    resolve.textContent = "Yopish";
+    resolve.addEventListener("click", async () => {
+      resolve.disabled = true;
+      try {
+        await api.post("/api/v1/alerts/" + alert.id + "/resolve", {});
+        await refresh();
+      } catch (err) {
+        showError(err.message);
+        resolve.disabled = false;
+      }
+    });
+
     row.appendChild(dot);
     row.appendChild(body);
+    row.appendChild(resolve);
+    return row;
+  }
+
+  const EVENT_LABEL = {
+    "checkin.sent": "Savol yuborildi",
+    "checkin.answered": "Bemor javob berdi",
+    "assessment.created": "Tahlil tugadi",
+    "alert.raised": "Signal yaratildi",
+    "alert.resolved": "Signal yopildi",
+    "doctor.replied": "Shifokor xabar yubordi",
+  };
+
+  function renderEvent(event) {
+    const row = document.createElement("div");
+    row.className = "px-3 py-2 flex items-baseline gap-2 text-sm";
+
+    const name = document.createElement("span");
+    name.className = "font-medium";
+    name.textContent = EVENT_LABEL[event.event_name] || event.event_name;
+
+    const code = document.createElement("code");
+    code.className = "text-[11px] text-slate-400";
+    code.textContent = event.event_name;
+
+    const payload = document.createElement("span");
+    payload.className = "text-xs text-slate-500 ml-auto";
+    payload.textContent = JSON.stringify(event.payload);
+
+    row.appendChild(name);
+    row.appendChild(code);
+    row.appendChild(payload);
     return row;
   }
 
@@ -134,9 +181,10 @@
   }
 
   async function refresh() {
-    const [dashboard, alerts] = await Promise.all([
+    const [dashboard, alerts, events] = await Promise.all([
       api.get("/api/v1/doctors/" + doctorId + "/dashboard"),
       api.get("/api/v1/doctors/" + doctorId + "/alerts?status=new"),
+      api.get("/api/v1/demo/events?limit=20"),
     ]);
 
     setText("count-total", dashboard.counts.total);
@@ -154,6 +202,26 @@
       alerts.alerts.map(renderAlert),
       "Faol signal yoʻq."
     );
+    replaceChildren(
+      document.getElementById("events"),
+      events.events.map(renderEvent),
+      "Voqealar yoʻq."
+    );
+  }
+
+  const resetBtn = document.getElementById("demo-reset");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", async () => {
+      resetBtn.disabled = true;
+      try {
+        await api.post("/api/v1/demo/reset", {});
+        await refresh();
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        resetBtn.disabled = false;
+      }
+    });
   }
 
   startPolling(refresh, {

@@ -33,6 +33,15 @@
     <p id="latest-action" class="text-sm font-medium mt-1 hidden"></p>
   </div>
 
+  {% if features.enabled('trend_chart') %}
+  <section class="mb-5 bg-white rounded-xl border border-slate-200 p-4" id="trend-section">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2">
+      Xavf dinamikasi
+    </h2>
+    <div id="trend-chart" class="text-sm text-slate-400">Yuklanmoqda…</div>
+  </section>
+  {% endif %}
+
   <section class="mb-5">
     <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2">
       Tarix

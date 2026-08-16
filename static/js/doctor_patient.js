@@ -27,6 +27,68 @@
 
   const SOURCE = { llm: "AI tahlili", rules: "Qoidalar", merged: "AI + qoidalar" };
 
+
+  const trendEl = document.getElementById("trend-chart");
+
+  const RISK_COLOUR = { red: "#dc2626", yellow: "#d97706", green: "#0d9488" };
+
+  function renderTrend(trend) {
+    if (!trendEl) return; // trend_chart feature is off
+    const points = trend.points || [];
+    if (points.length < 2) {
+      trendEl.textContent =
+        "Grafik uchun kamida ikkita baholash kerak (hozir " + points.length + ").";
+      return;
+    }
+
+    const W = 520, H = 120, PAD = 14;
+    const stepX = (W - PAD * 2) / (points.length - 1);
+    const y = (score) => H - PAD - (Math.max(0, Math.min(100, score)) / 100) * (H - PAD * 2);
+    const coords = points.map((p, i) => [PAD + i * stepX, y(p.risk_score)]);
+
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("class", "w-full h-32");
+
+    // Yellow and red thresholds as guide lines.
+    [[34, "#fcd34d"], [67, "#fca5a5"]].forEach(([score, colour]) => {
+      const line = document.createElementNS(svgNS, "line");
+      line.setAttribute("x1", PAD); line.setAttribute("x2", W - PAD);
+      line.setAttribute("y1", y(score)); line.setAttribute("y2", y(score));
+      line.setAttribute("stroke", colour);
+      line.setAttribute("stroke-dasharray", "4 4");
+      svg.appendChild(line);
+    });
+
+    const path = document.createElementNS(svgNS, "polyline");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "#0f766e");
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("points", coords.map((c) => c.join(",")).join(" "));
+    svg.appendChild(path);
+
+    points.forEach((p, i) => {
+      const dot = document.createElementNS(svgNS, "circle");
+      dot.setAttribute("cx", coords[i][0]);
+      dot.setAttribute("cy", coords[i][1]);
+      dot.setAttribute("r", "4");
+      dot.setAttribute("fill", RISK_COLOUR[p.risk_level] || RISK_COLOUR.green);
+      const title = document.createElementNS(svgNS, "title");
+      title.textContent = p.risk_score + "/100 · " + p.created_at;
+      dot.appendChild(title);
+      svg.appendChild(dot);
+    });
+
+    trendEl.innerHTML = "";
+    trendEl.appendChild(svg);
+    const caption = document.createElement("div");
+    caption.className = "text-xs text-slate-500 mt-1";
+    caption.textContent =
+      points.length + " ta baholash · hozirgi ball: " + trend.current + "/100";
+    trendEl.appendChild(caption);
+  }
+
   function showError(message) {
     errorEl.textContent = message;
     errorEl.classList.remove("hidden");
@@ -116,12 +178,15 @@
   }
 
   async function refresh() {
-    const [detail, timeline] = await Promise.all([
+    const requests = [
       api.get("/api/v1/patients/" + patientId + "/detail"),
       api.get("/api/v1/patients/" + patientId + "/timeline"),
-    ]);
+    ];
+    if (trendEl) requests.push(api.get("/api/v1/patients/" + patientId + "/trend"));
+    const [detail, timeline, trend] = await Promise.all(requests);
 
     renderHeader(detail);
+    if (trend) renderTrend(trend);
 
     timelineEl.innerHTML = "";
     if (!timeline.items.length) {

@@ -53,3 +53,8 @@ def doctor_message(pid):
             raise ValidationError("Shifokor ID notoʻgʻri.")
     return ok(doctor_service.send_doctor_message(
         pid, payload.get("text"), doctor_id=doctor_id))
+
+
+@bp.get("/<int:pid>/trend")
+def trend(pid):
+    return ok(doctor_service.get_trend(pid))

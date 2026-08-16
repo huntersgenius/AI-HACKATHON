@@ -19,7 +19,7 @@ load_dotenv(BASE_DIR / ".env")
 FEATURES = {
     "llm_analyzer": True,    # False -> rule analyzer only (offline demo)
     "doctor_reply": True,
-    "trend_chart": False,    # turn on when ready
+    "trend_chart": True,     # ready as of phase 9
     "sms_notifier": False,   # roadmap
     "multi_question": False,  # several questions in one day
 }

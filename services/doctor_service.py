@@ -180,3 +180,29 @@ def send_doctor_message(patient_id, text, doctor_id=None):
     )
 
     return {"message": _as_dict(message_repo.get(message_id))}
+
+
+def get_trend(patient_id):
+    """risk_score over time — the series behind the trend chart."""
+    _get_patient(patient_id)
+    points = [_as_dict(r) for r in assessment_repo.trend_for_patient(patient_id)]
+    scores = [p["risk_score"] for p in points]
+    return {
+        "points": points,
+        "max_score": max(scores) if scores else 0,
+        "current": scores[-1] if scores else 0,
+    }
+
+
+def resolve_alert(alert_id):
+    """Close an alert and announce it."""
+    alert = alert_repo.get(alert_id)
+    if alert is None:
+        raise NotFound("Signal topilmadi.")
+    if alert["status"] == "resolved":
+        raise ValidationError("Signal allaqachon yopilgan.")
+
+    alert_repo.resolve(alert_id)
+    events.emit(events.ALERT_RESOLVED, alert_id=alert_id,
+                patient_id=alert["patient_id"])
+    return _as_dict(alert_repo.get(alert_id))
