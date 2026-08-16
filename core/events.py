@@ -13,8 +13,6 @@ from collections import defaultdict
 
 from flask import current_app
 
-from core import db
-
 _handlers = defaultdict(list)
 
 
@@ -55,10 +53,12 @@ def _log(message, *args):
 
 def log_event(event_name, payload):
     """Persist one event row. Never raises — logging must not break a flow."""
+    from repos import event_repo  # local import: repos import core.db
+
     try:
-        db.execute(
-            "INSERT INTO event_log (event_name, payload) VALUES (?, ?)",
-            (event_name, json.dumps(payload, ensure_ascii=False, default=str)),
+        event_repo.create(
+            event_name,
+            json.dumps(payload, ensure_ascii=False, default=str),
         )
     except Exception:
         _log("event_log write failed: %s", event_name)
