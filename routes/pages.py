@@ -31,3 +31,12 @@ def patient_chat(pid):
 def doctor_dashboard(did):
     doctor = doctor_service.get_doctor(did)  # raises NotFound in Uzbek
     return render_template("doctor_dashboard.html", doctor=doctor)
+
+
+@bp.get("/doctor/patient/<int:pid>")
+def doctor_patient(pid):
+    patient = patient_repo.get(pid)
+    if patient is None:
+        raise NotFound("Bemor topilmadi.")
+    doctor = doctor_repo.get(patient["doctor_id"])
+    return render_template("doctor_patient.html", patient=patient, doctor=doctor)

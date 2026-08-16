@@ -7,8 +7,13 @@ patients who need attention at the top — red first, then yellow.
 import json
 
 from analyzers.base import RISK_ORDER
-from core.errors import NotFound
-from repos import alert_repo, assessment_repo, doctor_repo, patient_repo
+from config import features
+from core import events
+from core.errors import FeatureDisabled, NotFound, ValidationError
+from repos import (alert_repo, assessment_repo, checkin_repo, doctor_repo,
+                   message_repo, patient_repo)
+
+MAX_MESSAGE_LENGTH = 2000
 
 
 def _as_dict(row):
@@ -77,3 +82,101 @@ def get_dashboard(doctor_id):
             "new_alerts": alert_repo.count_by_status(doctor_id, "new"),
         },
     }
+
+
+def _get_patient(patient_id):
+    patient = patient_repo.get(patient_id)
+    if patient is None:
+        raise NotFound("Bemor topilmadi.")
+    return patient
+
+
+def get_patient_detail(patient_id):
+    """Header data for the patient detail page."""
+    patient = _get_patient(patient_id)
+    doctor = doctor_repo.get(patient["doctor_id"])
+    latest = assessment_repo.latest_for_patient(patient_id)
+    pending = checkin_repo.oldest_pending(patient_id)
+
+    return {
+        "patient": _as_dict(patient),
+        "doctor": _as_dict(doctor) if doctor is not None else None,
+        "latest_assessment": _as_dict(latest) if latest is not None else None,
+        "open_alerts": alert_repo.count_by_status(patient["doctor_id"], "new"),
+        "pending_question": pending["question_text"] if pending is not None else None,
+    }
+
+
+def get_timeline(patient_id):
+    """Messages and assessments woven into one chronological history."""
+    _get_patient(patient_id)
+
+    items = []
+    for row in message_repo.list_for_patient(patient_id):
+        items.append({
+            "kind": "message",
+            "id": row["id"],
+            "sender": row["sender"],
+            "text": row["text"],
+            "checkin_id": row["checkin_id"],
+            "created_at": row["created_at"],
+        })
+
+    for row in assessment_repo.list_for_patient(patient_id):
+        items.append({
+            "kind": "assessment",
+            "id": row["id"],
+            "message_id": row["message_id"],
+            "risk_level": row["risk_level"],
+            "risk_score": row["risk_score"],
+            "danger_signals": _parse_signals(row["danger_signals"]),
+            "reasoning": row["reasoning"],
+            "recommended_action": row["recommended_action"],
+            "source": row["source"],
+            "created_at": row["created_at"],
+        })
+
+    # created_at only has second granularity, so a message and the assessment
+    # it triggered usually carry the identical timestamp. Sorting on time
+    # alone would drop every assessment to the bottom, so each item is
+    # anchored to the message it belongs to (its own id, or the message_id it
+    # analysed) and the assessment sorts just after that message.
+    def position(item):
+        if item["kind"] == "message":
+            return (item["created_at"] or "", item["id"], 0, item["id"])
+        anchor = item["message_id"] or 0
+        return (item["created_at"] or "", anchor, 1, item["id"])
+
+    items.sort(key=position)
+    return items
+
+
+def send_doctor_message(patient_id, text, doctor_id=None):
+    """Store a message from the doctor and announce it to the patient chat."""
+    if not features.enabled("doctor_reply"):
+        raise FeatureDisabled("Shifokor javobi hozircha oʻchirilgan.")
+
+    patient = _get_patient(patient_id)
+
+    text = (text or "").strip()
+    if not text:
+        raise ValidationError("Xabar matni boʻsh boʻlmasligi kerak.")
+    if len(text) > MAX_MESSAGE_LENGTH:
+        raise ValidationError("Xabar juda uzun.")
+
+    if doctor_id is None:
+        doctor_id = patient["doctor_id"]
+
+    message_id = message_repo.create(
+        patient_id, "doctor", text,
+        meta_json=json.dumps({"doctor_id": doctor_id}, ensure_ascii=False),
+    )
+
+    events.emit(
+        events.DOCTOR_REPLIED,
+        patient_id=patient_id,
+        doctor_id=doctor_id,
+        message_id=message_id,
+    )
+
+    return {"message": _as_dict(message_repo.get(message_id))}

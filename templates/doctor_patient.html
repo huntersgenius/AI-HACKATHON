@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ patient['full_name'] }} — tafsilot{% endblock %}
+
+{% block header_extra %}
+  <a href="{{ url_for('pages.doctor_dashboard', did=patient['doctor_id']) }}"
+     class="text-sm text-teal-700 hover:underline">← Panelga qaytish</a>
+{% endblock %}
+
+{% block content %}
+<div id="detail-root"
+     data-patient-id="{{ patient['id'] }}"
+     data-doctor-id="{{ patient['doctor_id'] }}">
+
+  <div class="bg-white rounded-xl border border-slate-200 p-4 mb-5">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-semibold">{{ patient['full_name'] }}</h1>
+        <div class="text-sm text-slate-600">{{ patient['diagnosis'] }}</div>
+        <div class="text-xs text-slate-400 mt-1">
+          Chiqarilgan: {{ patient['discharge_date'] }} ·
+          {{ patient['phone_sim'] }}
+        </div>
+      </div>
+      <div class="text-right">
+        <span id="risk-badge"
+              class="inline-block rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">
+          —
+        </span>
+        <div class="text-xs text-slate-400 mt-1" id="day-label">—</div>
+      </div>
+    </div>
+    <p id="latest-reasoning" class="text-sm text-slate-700 mt-3 hidden"></p>
+    <p id="latest-action" class="text-sm font-medium mt-1 hidden"></p>
+  </div>
+
+  <section class="mb-5">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2">
+      Tarix
+    </h2>
+    <div id="timeline" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+      <p class="text-sm text-slate-400" id="timeline-empty">Yuklanmoqda…</p>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-xl border border-slate-200 p-4">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2">
+      Bemorga xabar yuborish
+    </h2>
+    <form id="reply-form" class="flex gap-2">
+      <input id="reply-input" type="text" autocomplete="off"
+             class="flex-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+             placeholder="Masalan: Bugun qabulga keling, jarohatni koʻramiz.">
+      <button type="submit" id="reply-send"
+              class="rounded-lg bg-teal-600 text-white px-4 py-2 font-medium hover:bg-teal-700 disabled:opacity-50">
+        Yuborish
+      </button>
+    </form>
+    <p id="detail-error" class="hidden text-sm text-red-600 mt-2"></p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/doctor_patient.js') }}"></script>
+{% endblock %}
