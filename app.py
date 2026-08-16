@@ -17,8 +17,12 @@ from core.responses import ok
 
 # Extension modules imported for their side effects (decorator registration).
 # A new hook/analyzer/notifier = a new file listed here, nothing else changes.
-HOOK_MODULES = []
-ANALYZER_MODULES = []
+HOOK_MODULES = [
+    "hooks.analysis_hooks",
+]
+ANALYZER_MODULES = [
+    "analyzers.rule_analyzer",
+]
 NOTIFIER_MODULES = []
 
 # (import path, url_prefix or None)
