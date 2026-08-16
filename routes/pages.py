@@ -4,6 +4,7 @@ from flask import Blueprint, render_template
 
 from core.errors import NotFound
 from repos import doctor_repo, patient_repo
+from services import doctor_service
 
 bp = Blueprint("pages", __name__)
 
@@ -24,3 +25,9 @@ def patient_chat(pid):
     if patient is None:
         raise NotFound("Bemor topilmadi.")
     return render_template("patient_chat.html", patient=patient)
+
+
+@bp.get("/doctor/<int:did>/dashboard")
+def doctor_dashboard(did):
+    doctor = doctor_service.get_doctor(did)  # raises NotFound in Uzbek
+    return render_template("doctor_dashboard.html", doctor=doctor)

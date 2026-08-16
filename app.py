@@ -19,6 +19,7 @@ from core.responses import ok
 # A new hook/analyzer/notifier = a new file listed here, nothing else changes.
 HOOK_MODULES = [
     "hooks.analysis_hooks",
+    "hooks.alert_hooks",
 ]
 ANALYZER_MODULES = [
     "analyzers.rule_analyzer",
@@ -31,6 +32,7 @@ BLUEPRINTS = [
     ("routes.pages:bp", None),
     ("routes.demo_api:bp", "/api/v1/demo"),
     ("routes.patient_api:bp", "/api/v1/patients"),
+    ("routes.doctor_api:bp", "/api/v1/doctors"),
 ]
 
 

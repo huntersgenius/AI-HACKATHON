@@ -25,11 +25,12 @@
   <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">Shifokor</h2>
   <div class="grid gap-3 sm:grid-cols-2">
     {% for d in doctors %}
-      <div class="block bg-white rounded-xl border border-slate-200 p-4 opacity-60">
+      <a href="{{ url_for('pages.doctor_dashboard', did=d['id']) }}"
+         class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-teal-500 hover:shadow-sm transition">
         <div class="font-medium">{{ d['full_name'] }}</div>
         <div class="text-sm text-slate-500">{{ d['clinic_name'] }}</div>
-        <div class="text-xs text-slate-400 mt-1">Panel tayyorlanmoqda</div>
-      </div>
+        <div class="text-xs text-slate-400 mt-1">Panelga kirish</div>
+      </a>
     {% else %}
       <p class="text-slate-500">Shifokorlar topilmadi.</p>
     {% endfor %}
