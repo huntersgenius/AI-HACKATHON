@@ -1,90 +1,98 @@
--- 003_seed_personas.sql — two more personas: Aziza (post-caesarean) and
--- Hasan (heart failure follow-up).
+-- 003_seed_personas.sql — yana ikkita persona: Sardor (1-tur qandli diabet,
+-- intensiv insulin terapiyasi) va Nodira (gestatsion diabet).
 --
--- This migration is the architecture test from PLAN.md section 8: adding a
--- persona must be data only. No Python file is touched, and no analyzer,
--- service or route knows these names exist.
+-- Bu migratsiya PLAN.md 8-bo'limidagi arxitektura sinovi: persona qo'shish
+-- faqat ma'lumot bo'lishi kerak. Birorta Python fayl o'zgartirilmaydi, va
+-- hech qaysi analizator, servis yoki route bu nomlar borligini bilmaydi.
 --
--- Note: apostrophes in Uzbek words are escaped as '' inside SQL literals.
+-- Uchta persona diabetning uchta rasmiy turini qamrab oladi — bu AI ning
+-- tashxisga qarab moslashishini ko'rsatadi.
+-- Izoh: o'zbekcha apostrof SQL literal ichida '' bilan yoziladi.
 
 INSERT INTO patients (
     full_name, persona_key, diagnosis, discharge_date, phone_sim,
     doctor_id, current_day, risk_level, meta_json
 ) VALUES
-    ('Aziza Rahimova',
-     'aziza',
-     'Kesar kesish operatsiyasidan keyingi kuzatuv',
+    ('Sardor Toshmatov',
+     'sardor',
+     '1-tur qandli diabet — intensiv insulin terapiyasi',
      date('now'),
-     '+998 93 345 67 89',
+     '+998 90 222 33 44',
      (SELECT id FROM doctors WHERE full_name = 'Dilnoza Karimova'),
      0,
      'green',
-     '{"age": 28, "surgery": "kesar kesish", "language": "uz"}'),
+     '{"age": 19, "diabetes_type": "1-tur", "duration_years": 6, "hba1c": 7.1, "hba1c_target": 7.0, "gfr": 112, "regimen": "intensiv_insulin", "language": "uz"}'),
 
-    ('Hasan Yoʻldoshev',
-     'hasan',
-     'Yurak yetishmovchiligi — statsionardan keyingi kuzatuv',
+    ('Nodira Karimova',
+     'nodira',
+     'Gestatsion diabet — homiladorlik 26-hafta',
      date('now'),
-     '+998 94 456 78 90',
+     '+998 90 333 44 55',
      (SELECT id FROM doctors WHERE full_name = 'Dilnoza Karimova'),
      0,
      'green',
-     '{"age": 61, "condition": "yurak yetishmovchiligi", "language": "uz"}');
+     '{"age": 31, "diabetes_type": "gestatsion", "pregnancy_week": 26, "hba1c": 5.4, "hba1c_target": 6.0, "gfr": 126, "regimen": "parhez", "language": "uz"}');
 
--- Aziza: five days after a caesarean section.
+
+-- Sardor — 1-tur, intensiv insulin terapiyasi.
+-- Protokol: intensiv insulin terapiyasida kuniga kamida 4 marta o'lchash.
+-- Gipoglikemiya va ketoatsidoz xavfi ikkalasi ham yuqori.
 INSERT INTO checkin_templates
     (persona_key, day_offset, seq, question_key, question_text, answer_type, config_json)
 VALUES
-    ('aziza', 1, 0, 'temperature',
-     'Assalomu alaykum, Aziza! Operatsiyadan keyingi 1-kun. Tana haroratingiz necha daraja? Masalan: 36.9',
+    ('sardor', 1, 0, 'glucose_fasting',
+     'Assalomu alaykum, Sardor! Kuzatuvning 1-kuni. Nahorgi qand darajangiz qancha?',
      'number',
-     '{"unit": "°C", "min": 34, "max": 43, "placeholder": "36.9"}'),
+     '{"unit": "mmol/l", "min": 1, "max": 40, "placeholder": "5.8"}'),
 
-    ('aziza', 2, 0, 'bleeding',
-     'Xayrli kun, Aziza! 2-kun. Qon ketishi qanday? Miqdori kamaydimi yoki ko''paydimi?',
+    ('sardor', 2, 0, 'insulin',
+     'Salom, Sardor! 2-kun. Bugun insulin in''eksiyalarini o''z vaqtida qildingizmi? Doza o''zgardimi?',
      'free_text',
-     '{"placeholder": "Masalan: kamaydi, rangi och"}'),
+     '{"placeholder": "Masalan: hammasini o''z vaqtida qildim"}'),
 
-    ('aziza', 3, 0, 'wound',
-     'Salom, Aziza! 3-kun. Chok holati qanday? Qizarish, shish yoki yiring bormi?',
+    ('sardor', 3, 0, 'hypo_check',
+     'Salom, Sardor! 3-kun. Oxirgi kunlarda titrash, terlash yoki kuchli ochlik hissi bo''ldimi? Bu gipoglikemiya belgilari.',
      'free_text',
-     '{"placeholder": "Masalan: chok toza, qizarish yo''q"}'),
+     '{"placeholder": "Masalan: yo''q, bunday holat bo''lmadi"}'),
 
-    ('aziza', 4, 0, 'pain',
-     'Salom, Aziza! 4-kun. Og''riqni 1 dan 10 gacha baholang: 1 — deyarli yo''q, 10 — juda kuchli.',
-     'scale_1_10',
-     '{"min": 1, "max": 10}'),
+    ('sardor', 4, 0, 'glucose_pp',
+     'Salom, Sardor! 4-kun. Ovqatdan 2 soat keyingi qand darajangiz qancha?',
+     'number',
+     '{"unit": "mmol/l", "min": 1, "max": 40, "placeholder": "8.2"}'),
 
-    ('aziza', 5, 0, 'wellbeing',
-     'Salom, Aziza! 5-kun. Kayfiyatingiz qanday? Uyqu va ishtaha haqida yozing.',
+    ('sardor', 5, 0, 'wellbeing',
+     'Salom, Sardor! 5-kun. Umumiy ahvolingiz qanday? Ko''ngil aynishi, qusish yoki nafasda g''alati hid bormi?',
      'free_text',
-     '{"placeholder": "Masalan: uyqu tinch, ishtaha yaxshi"}');
+     '{"placeholder": "Masalan: hammasi yaxshi"}');
 
--- Hasan: five days after a heart-failure admission.
+
+-- Nodira — gestatsion diabet.
+-- Protokol: homiladorlikda maqsad qattiqroq — nahorga < 5.1 mmol/l,
+-- ovqatdan 2 soat keyin < 8.5 mmol/l.
 INSERT INTO checkin_templates
     (persona_key, day_offset, seq, question_key, question_text, answer_type, config_json)
 VALUES
-    ('hasan', 1, 0, 'breathing',
-     'Assalomu alaykum, Hasan! Kuzatuvning 1-kuni. Nafas olishingiz qanday? Yurganda hansiraysizmi?',
+    ('nodira', 1, 0, 'glucose_fasting',
+     'Assalomu alaykum, Nodira! Kuzatuvning 1-kuni. Nahorgi qand darajangiz qancha? Homiladorlikda maqsad — 5.1 dan past.',
+     'number',
+     '{"unit": "mmol/l", "min": 1, "max": 40, "placeholder": "4.8"}'),
+
+    ('nodira', 2, 0, 'glucose_pp',
+     'Xayrli kun, Nodira! 2-kun. Ovqatdan 2 soat keyingi qand darajangiz qancha? Maqsad — 8.5 dan past.',
+     'number',
+     '{"unit": "mmol/l", "min": 1, "max": 40, "placeholder": "7.2"}'),
+
+    ('nodira', 3, 0, 'blood_pressure',
+     'Salom, Nodira! 3-kun. Qon bosimingizni o''lchadingizmi? Masalan: 118/74',
      'free_text',
-     '{"placeholder": "Masalan: yurganda biroz hansirayman"}'),
+     '{"placeholder": "118/74"}'),
 
-    ('hasan', 2, 0, 'swelling',
-     'Xayrli kun, Hasan! 2-kun. Oyoqlaringizda shish bormi? Kechga tomon kuchayadimi?',
+    ('nodira', 4, 0, 'swelling',
+     'Salom, Nodira! 4-kun. Oyoqlaringizda yoki yuzingizda shish bormi? Bosh og''rig''i yoki ko''z xiralashishi kuzatildimi?',
      'free_text',
-     '{"placeholder": "Masalan: to''piqda biroz shish bor"}'),
+     '{"placeholder": "Masalan: shish yo''q, o''zimni yaxshi his qilyapman"}'),
 
-    ('hasan', 3, 0, 'medication',
-     'Salom, Hasan! 3-kun. Bugun dorilarni belgilangan vaqtda qabul qildingizmi?',
-     'yes_no',
-     '{"options": ["ha", "yo''q"]}'),
-
-    ('hasan', 4, 0, 'pain',
-     'Salom, Hasan! 4-kun. Ko''krak qafasidagi og''riqni 1 dan 10 gacha baholang.',
-     'scale_1_10',
-     '{"min": 1, "max": 10}'),
-
-    ('hasan', 5, 0, 'wellbeing',
-     'Salom, Hasan! 5-kun. Umumiy ahvolingiz qanday? Holsizlik yoki bosh aylanishi bormi?',
+    ('nodira', 5, 0, 'wellbeing',
+     'Salom, Nodira! 5-kun. Umumiy ahvolingiz qanday? Parhezga rioya qilyapsizmi?',
      'free_text',
-     '{"placeholder": "Masalan: holsizlik yo''q, yaxshiman"}');
+     '{"placeholder": "Masalan: parhezga rioya qilyapman"}');

@@ -61,7 +61,7 @@ def test_health_returns_envelope(client):
 
 def test_migrations_seeded_three_personas(client):
     patients = data(client.get("/api/v1/doctors/1/patients"))["patients"]
-    assert {p["persona_key"] for p in patients} == {"bobur", "aziza", "hasan"}
+    assert {p["persona_key"] for p in patients} == {"bobur", "sardor", "nodira"}
 
 
 def test_unknown_route_uses_error_envelope(client):
@@ -81,20 +81,21 @@ def advance(client, pid):
 def test_full_chain_red_answer_raises_alert(client):
     sent = data(advance(client, 1))
     assert sent["day_number"] == 1
-    assert sent["questions"][0]["question_key"] == "temperature"
+    assert sent["questions"][0]["question_key"] == "glucose_fasting"
 
-    data(send(client, 1, "Haroratim 39.2, yaradan yiring chiqyapti"))
+    # Ketoatsidoz: aseton hidi + qusish. Protokol bo'yicha qizil daraja.
+    data(send(client, 1, "Ogzim quruq, nafasimdan galati hid kelyapti, qustim"))
 
     timeline = data(client.get("/api/v1/patients/1/timeline"))["items"]
     assessments = [i for i in timeline if i["kind"] == "assessment"]
     assert len(assessments) == 1
     assert assessments[0]["risk_level"] == "red"
-    assert "yiring" in assessments[0]["danger_signals"]
+    assert "aseton_hidi" in assessments[0]["danger_signals"]
 
     dashboard = data(client.get("/api/v1/doctors/1/dashboard"))
     assert dashboard["counts"]["red"] == 1
     assert dashboard["counts"]["new_alerts"] == 1
-    assert dashboard["patients"][0]["full_name"] == "Bobur Ergashev"
+    assert dashboard["patients"][0]["full_name"] == "Bobur Aliyev"
 
     alerts = data(client.get("/api/v1/doctors/1/alerts?status=new"))["alerts"]
     assert alerts[0]["severity"] == "red"
@@ -108,15 +109,25 @@ def test_full_chain_red_answer_raises_alert(client):
 
 def test_green_answer_raises_no_alert(client):
     advance(client, 1)
-    data(send(client, 1, "36.6, ozimni yaxshi his qilyapman"))
+    # Nahorgi qand 6.4 — maqsad < 7.0, ya'ni yashil.
+    data(send(client, 1, "6.4"))
     assert data(client.get("/api/v1/doctors/1/dashboard"))["counts"]["new_alerts"] == 0
+
+
+def test_hypoglycaemia_is_flagged_red(client):
+    """Gipoglikemiya (< 3.9 mmol/l) — giperglikemiyadan teskari xavf."""
+    advance(client, 1)
+    data(send(client, 1, "3.2"))
+    latest = data(client.get("/api/v1/patients/1/detail"))["latest_assessment"]
+    assert latest["risk_level"] == "red"
+    assert "gipoglikemiya" in latest["danger_signals"]
 
 
 def test_incremental_polling_returns_only_new_messages(client):
     advance(client, 1)
     first = data(client.get("/api/v1/patients/1/messages?after_id=0"))["messages"]
     last_id = first[-1]["id"]
-    data(send(client, 1, "36.6"))
+    data(send(client, 1, "6.4"))
     fresh = data(client.get("/api/v1/patients/1/messages?after_id=%d" % last_id))
     assert [m["sender"] for m in fresh["messages"]] == ["patient"]
 
@@ -132,7 +143,7 @@ def test_doctor_reply_reaches_patient_chat(client):
 
 def test_alert_can_be_resolved_once(client):
     advance(client, 1)
-    data(send(client, 1, "39.5 harorat, qaltirayapman"))
+    data(send(client, 1, "Nafasimdan aseton hidi kelyapti"))
     alert = data(client.get("/api/v1/doctors/1/alerts?status=new"))["alerts"][0]
 
     resolved = data(client.post("/api/v1/alerts/%d/resolve" % alert["id"]))["alert"]
@@ -147,9 +158,9 @@ def test_alert_can_be_resolved_once(client):
 
 def test_trend_series_follows_the_answers(client):
     advance(client, 1)
-    data(send(client, 1, "36.6"))
+    data(send(client, 1, "6.4"))            # yashil: maqsad ichida
     advance(client, 1)
-    data(send(client, 1, "9"))
+    data(send(client, 1, "Nafasimdan aseton hidi kelyapti"))   # qizil
 
     trend = data(client.get("/api/v1/patients/1/trend"))
     assert [p["risk_level"] for p in trend["points"]] == ["green", "red"]
@@ -158,7 +169,7 @@ def test_trend_series_follows_the_answers(client):
 
 def test_reset_restores_seeded_state(client):
     advance(client, 1)
-    data(send(client, 1, "39.5, yiring bor"))
+    data(send(client, 1, "Nafasimdan aseton hidi kelyapti, qustim"))
     assert data(client.get("/api/v1/doctors/1/dashboard"))["counts"]["new_alerts"] == 1
 
     result = data(client.post("/api/v1/demo/reset"))
@@ -169,20 +180,20 @@ def test_reset_restores_seeded_state(client):
                                    "green": 3, "new_alerts": 0}
     assert data(client.get("/api/v1/patients/1/timeline"))["items"] == []
     # Seeded data survives a reset: the questions are still there.
-    assert data(advance(client, 1))["questions"][0]["question_key"] == "temperature"
+    assert data(advance(client, 1))["questions"][0]["question_key"] == "glucose_fasting"
 
 
 # --- personas are data, not code -----------------------------------------
 
 @pytest.mark.parametrize("pid,expected_first_question", [
-    (1, "temperature"),
-    (2, "temperature"),
-    (3, "breathing"),
+    (1, "glucose_fasting"),   # Bobur — 2-tur
+    (2, "glucose_fasting"),   # Sardor — 1-tur
+    (3, "glucose_fasting"),   # Nodira — gestatsion
 ])
 def test_every_persona_runs_the_same_pipeline(client, pid, expected_first_question):
     sent = data(advance(client, pid))
     assert sent["questions"][0]["question_key"] == expected_first_question
-    data(send(client, pid, "Yaradan yiring chiqyapti"))
+    data(send(client, pid, "Nafasimdan aseton hidi kelyapti"))
     latest = data(client.get("/api/v1/patients/%d/detail" % pid))["latest_assessment"]
     assert latest["risk_level"] == "red"
 

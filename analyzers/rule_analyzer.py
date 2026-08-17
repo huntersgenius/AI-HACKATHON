@@ -19,7 +19,56 @@ SCORE = {GREEN: 10, YELLOW: 55, RED: 90}
 
 # question_key -> ordered bands. First matching band wins.
 # (low, high, risk_level, signal, reasoning)
+#
+# Diabet chegaralari: O'zR SSV 2025-yil 23-iyun 180-sonli buyrug'iga ilova
+# qilingan «2-tur qandli diabet» va «Diabetik ketoatsidoz» milliy klinik
+# protokollaridan olingan.
 THRESHOLDS = {
+    # --- Diabet: glikemiya ---
+    "glucose_fasting": [
+        (0.0, 3.9, RED, "gipoglikemiya",
+         "Nahorgi qand 3.9 mmol/l dan past — gipoglikemiya. Protokol bo'yicha "
+         "shoshilinch holat: tez hazm bo'ladigan uglevod kerak."),
+        (3.9, 7.0, GREEN, None, "Nahorgi qand maqsadli oraliqda."),
+        (7.0, 11.0, YELLOW, "nahorgi_giperglikemiya",
+         "Nahorgi qand maqsaddan yuqori (maqsad < 7.0 mmol/l)."),
+        (11.0, 16.0, YELLOW, "giperglikemiya",
+         "Nahorgi qand 11.0 dan yuqori — ketoatsidoz chegarasi. Keton "
+         "tekshiruvi tavsiya etiladi."),
+        (16.0, 60.0, RED, "ogir_giperglikemiya",
+         "Nahorgi qand 16.0 mmol/l dan yuqori — og'ir giperglikemiya, "
+         "ketoatsidoz xavfi."),
+    ],
+    "glucose_pp": [
+        (0.0, 3.9, RED, "gipoglikemiya",
+         "Ovqatdan keyingi qand 3.9 mmol/l dan past — gipoglikemiya."),
+        (3.9, 10.0, GREEN, None, "Ovqatdan keyingi qand maqsadli oraliqda."),
+        (10.0, 16.0, YELLOW, "postprandial_giperglikemiya",
+         "Ovqatdan 2 soat keyingi qand maqsaddan yuqori (maqsad < 10.0 mmol/l)."),
+        (16.0, 60.0, RED, "ogir_giperglikemiya",
+         "Ovqatdan keyingi qand 16.0 mmol/l dan yuqori — og'ir giperglikemiya."),
+    ],
+    "hba1c": [
+        (0.0, 4.0, YELLOW, "shubhali_hba1c",
+         "HbA1c qiymati juda past — o'lchov xatosi bo'lishi mumkin."),
+        (4.0, 7.0, GREEN, None, "HbA1c maqsadli darajada (< 7.0%)."),
+        (7.0, 9.0, YELLOW, "hba1c_maqsaddan_yuqori",
+         "HbA1c maqsaddan yuqori (maqsad < 7.0%). Terapiyani qayta ko'rib "
+         "chiqish 3 oydan kechiktirilmasligi kerak."),
+        (9.0, 20.0, RED, "hba1c_dekompensatsiya",
+         "HbA1c 9% dan yuqori — uglevod almashinuvi dekompensatsiyasi."),
+    ],
+    # Javobda birinchi son sistolik bosim deb olinadi ("128/82" -> 128).
+    "blood_pressure": [
+        (0.0, 90.0, RED, "past_bosim",
+         "Sistolik bosim 90 dan past — kollaps xavfi."),
+        (90.0, 131.0, GREEN, None, "Qon bosimi maqsadli oraliqda."),
+        (131.0, 160.0, YELLOW, "bosim_maqsaddan_yuqori",
+         "Sistolik bosim maqsaddan yuqori (18–65 yosh uchun maqsad ≤ 130)."),
+        (160.0, 300.0, RED, "yuqori_bosim",
+         "Sistolik bosim 160 dan yuqori — gipertenziv holat."),
+    ],
+    # --- Jarrohlik personalari uchun saqlanadi ---
     "temperature": [
         (38.5, 45.0, RED, "juda_yuqori_harorat",
          "Tana harorati 38.5°C dan yuqori — infeksiya belgisi bo'lishi mumkin."),
@@ -40,6 +89,52 @@ THRESHOLDS = {
 
 # (regex, risk_level, signal, reasoning)
 KEYWORD_RULES = [
+    # --- Diabetik ketoatsidoz (DKA) — «Diabetik ketoatsidoz» protokoli ---
+    (r"aseton|atseton|sirka hid|g'alati hid|galati hid|hid kel", RED, "aseton_hidi",
+     "Nafasda aseton hidi — ketoatsidoz sindromining eng xarakterli belgisi. "
+     "Protokol bo'yicha shoshilinch kasalxonaga yotqizish talab qilinadi."),
+    (r"chuqur nafas|shovqinli nafas|tez nafas ol", RED, "kussmaul_nafasi",
+     "Chuqur, shovqinli nafas (Kussmaul) — ketoatsidoz belgisi."),
+    (r"kofe quyqa|qora qus|qora rangli qus", RED, "kofe_quyqasi_qusish",
+     "\"Kofe quyqasi\" rangidagi qusish — eroziv gastrit yoki stress yarasi belgisi."),
+    (r"ko'p siy|kop siy|tez-tez siy|siyishim ko'pay|siyishim kopay", YELLOW, "poliuriya",
+     "Poliuriya — dekompensatsiya belgisi. Ketoatsidozda kuniga 3–6 litrgacha yetadi."),
+    (r"chanqa|tashna|suv ich(gim|aver)", YELLOW, "polidipsiya",
+     "Kuchli chanqash — giperglikemiya belgisi."),
+    (r"og'zim quruq|ogzim quruq|og'iz qurish|ogiz qurish", YELLOW, "ogiz_qurishi",
+     "Og'iz qurishi — suvsizlanish sindromi belgisi."),
+
+    # --- Gipoglikemiya — teri NAM, tez rivojlanadi ---
+    (r"terla|ter bos|sovuq ter", RED, "terlash",
+     "Terlash (teri nam) — gipoglikemiyaning xarakterli belgisi. "
+     "Bu holatni ketoatsidozdan ajratadi: ketoatsidozda teri quruq."),
+    (r"och qol|ochlik|qorn?i(m)? och|juda och", RED, "ochlik_hissi",
+     "Kuchli ochlik hissi — gipoglikemiya belgisi."),
+
+    # --- Dori/insulin uzilishi — DKA ning eng ko'p uchraydigan sababi ---
+    (r"insulin.{0,20}(qilmad|unutdim|tugad|yo'q|yoq)", RED, "insulin_uzilishi",
+     "Insulin in'eksiyasi o'tkazib yuborilgan — protokol bo'yicha ketoatsidozning "
+     "eng ko'p uchraydigan sababi."),
+    (r"dori.{0,20}(ichmad|qilmad|unutdim|tugad)|ukol qilmad", YELLOW, "dori_uzilishi",
+     "Dori qabul qilish uzilgan — dekompensatsiya xavfi."),
+
+    # --- Nefropatiya (SBK C4–C5) ---
+    (r"siydik kam|peshob kam|siya olma|siydik chiqma", RED, "oliguriya",
+     "Siydik chiqishining kamayishi — buyrak funksiyasining yomonlashuvi belgisi."),
+    (r"butun tana(m)? shish|hamma yerim shish|yuzim shish", RED, "anasarka",
+     "Keng tarqalgan shish — protokol bo'yicha shoshilinch kasalxonaga yotqizish ko'rsatmasi."),
+    (r"terim qichi|qichish", YELLOW, "teri_qichishishi",
+     "Terining qichishishi — uremik intoksikatsiya yoki giperglikemiya belgisi."),
+
+    # --- Diabetik neyropatiya / retinopatiya ---
+    (r"oyoq.{0,15}uvish|uvishyap|chumoli yugur|karaxt", YELLOW, "parasteziya",
+     "Oyoqlarda uvishish — diabetik neyropatiya belgisi."),
+    (r"ko'rish(im)? xira|korish xira|ko'zim xira|kozim xira|xira ko'r", YELLOW, "korish_xiralashishi",
+     "Ko'rishning xiralashishi — retinopatiya yoki giperglikemiya belgisi."),
+    (r"oyog'im(da)? yara|oyoqda yara|yara bit(may|mas)", RED, "diabetik_oyoq",
+     "Oyoqdagi yara — diabetik oyoq sindromi xavfi, shoshilinch ko'rik kerak."),
+
+    # --- Jarrohlik personalari uchun saqlanadi ---
     (r"yiring", RED, "yiring",
      "Jarohatdan yiring ajralmoqda — infeksiya belgisi."),
     (r"qon ket|qon oq|qonayap", RED, "qon_ketishi",

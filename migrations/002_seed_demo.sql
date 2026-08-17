@@ -1,7 +1,13 @@
--- 002_seed_demo.sql — demo data: one doctor, patient Bobur, 5 days of check-in
--- questions. Adding a persona or a question later means a NEW seed migration,
--- never a Python change (PLAN.md principle 1).
--- Note: apostrophes in Uzbek words are escaped as '' inside SQL literals.
+-- 002_seed_demo.sql — demo ma'lumotlari: bitta shifokor, bemor Bobur
+-- (2-tur qandli diabet) va 5 kunlik kuzatuv savollari.
+--
+-- Loyihaning asosiy yo'nalishi — qandli diabet. Savollar va chegaralar
+-- O'zR SSV 2025-yil 23-iyundagi 180-sonli buyrug'iga ilova qilingan
+-- «2-tur qandli diabet» milliy klinik protokolidan olingan.
+--
+-- Persona yoki savol qo'shish keyinchalik YANGI seed migratsiyasi bilan
+-- bajariladi, Python o'zgartirilmaydi (PLAN.md 1-tamoyil).
+-- Izoh: o'zbekcha apostrof SQL literal ichida '' bilan yoziladi.
 
 INSERT INTO doctors (full_name, clinic_name, phone_sim) VALUES
     ('Dilnoza Karimova', 'Qarshi shahar 3-son OSHP', '+998 90 123 45 67');
@@ -10,43 +16,44 @@ INSERT INTO patients (
     full_name, persona_key, diagnosis, discharge_date, phone_sim,
     doctor_id, current_day, risk_level, meta_json
 ) VALUES (
-    'Bobur Ergashev',
+    'Bobur Aliyev',
     'bobur',
-    'O''tkir appenditsit — laparoskopik appendektomiya',
+    '2-tur qandli diabet — 8 yil, SBK C2 A2',
     date('now'),
-    '+998 91 234 56 78',
+    '+998 90 111 22 33',
     (SELECT id FROM doctors WHERE full_name = 'Dilnoza Karimova'),
     0,
     'green',
-    '{"age": 34, "surgery": "appendektomiya", "language": "uz"}'
+    '{"age": 52, "diabetes_type": "2-tur", "duration_years": 8, "ckd_stage": "C2", "albuminuria": "A2", "hba1c": 8.4, "hba1c_target": 7.0, "gfr": 74, "regimen": "peroral", "language": "uz"}'
 );
 
--- Five days of follow-up questions for the "bobur" persona.
--- seq = 0 everywhere for now; the column is ready for several questions a day.
+-- Bobur uchun besh kunlik kuzatuv savollari.
+-- Protokol: peroral terapiyada kuniga kamida 1 marta turli vaqtlarda
+-- o'lchash + haftada 1 glikemik profil. Qon bosimi har kuni.
 INSERT INTO checkin_templates
     (persona_key, day_offset, seq, question_key, question_text, answer_type, config_json)
 VALUES
-    ('bobur', 1, 0, 'temperature',
-     'Assalomu alaykum, Bobur! Operatsiyadan keyingi 1-kun. Bugun tana haroratingiz necha daraja? Masalan: 36.8',
+    ('bobur', 1, 0, 'glucose_fasting',
+     'Assalomu alaykum, Bobur aka! Kuzatuvning 1-kuni. Bugun nahorgi qand darajangiz qancha? Masalan: 6.4',
      'number',
-     '{"unit": "°C", "min": 34, "max": 43, "placeholder": "36.8"}'),
+     '{"unit": "mmol/l", "min": 1, "max": 40, "placeholder": "6.4"}'),
 
-    ('bobur', 2, 0, 'pain',
-     'Xayrli kun, Bobur! 2-kun. Jarohat sohasidagi og''riqni 1 dan 10 gacha baholang: 1 — deyarli yo''q, 10 — juda kuchli.',
-     'scale_1_10',
-     '{"min": 1, "max": 10}'),
-
-    ('bobur', 3, 0, 'wound',
-     'Salom, Bobur! 3-kun. Jarohat holati qanday? Qizarish, shish yoki yiring bormi? Bog''lam quruqmi?',
+    ('bobur', 2, 0, 'blood_pressure',
+     'Xayrli kun, Bobur aka! 2-kun. Bugun qon bosimingizni o''lchadingizmi? Masalan: 128/82',
      'free_text',
-     '{"placeholder": "Masalan: bog''lam quruq, qizarish yo''q"}'),
+     '{"placeholder": "128/82"}'),
 
-    ('bobur', 4, 0, 'mobility',
-     'Salom, Bobur! 4-kun. Bugun o''rningizdan turib yura oldingizmi? Qancha vaqt yurdingiz?',
+    ('bobur', 3, 0, 'glucose_pp',
+     'Salom, Bobur aka! 3-kun. Ovqatdan 2 soat keyingi qand darajangiz qancha? Masalan: 9.1',
+     'number',
+     '{"unit": "mmol/l", "min": 1, "max": 40, "placeholder": "9.1"}'),
+
+    ('bobur', 4, 0, 'medication',
+     'Salom, Bobur aka! 4-kun. Bugun dorilaringizni belgilangan vaqtda qabul qildingizmi? Metformin va glimepirid.',
      'free_text',
-     '{"placeholder": "Masalan: kuniga 3 marta, 10 daqiqadan"}'),
+     '{"placeholder": "Masalan: hammasini ichdim"}'),
 
     ('bobur', 5, 0, 'wellbeing',
-     'Salom, Bobur! 5-kun. Umumiy ahvolingiz qanday? Ishtaha, uyqu va kayfiyatingiz haqida yozing.',
+     'Salom, Bobur aka! 5-kun. Umumiy ahvolingiz qanday? Chanqash, tez-tez siyish, holsizlik yoki boshqa shikoyat bormi?',
      'free_text',
-     '{"placeholder": "Masalan: ishtaha yaxshi, uyqu tinch"}');
+     '{"placeholder": "Masalan: shikoyat yo''q, o''zimni yaxshi his qilyapman"}');
