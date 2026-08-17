@@ -1,12 +1,24 @@
 """Jinja2 pages. Templates get ids and names only — data arrives over the API."""
 
-from flask import Blueprint, render_template
+import os
+
+from flask import Blueprint, current_app, render_template, send_from_directory
 
 from core.errors import NotFound
 from repos import doctor_repo, patient_repo
 from services import doctor_service
 
 bp = Blueprint("pages", __name__)
+
+
+@bp.get("/sw.js")
+def service_worker():
+    """Served from the root path (not /static/) so its scope covers the
+    whole app — push notification clicks need to find/focus any open tab."""
+    return send_from_directory(
+        os.path.join(current_app.root_path, "static"), "sw.js",
+        mimetype="application/javascript",
+    )
 
 
 @bp.get("/")

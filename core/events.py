@@ -24,6 +24,8 @@ ASSESSMENT_CREATED = "assessment.created"
 ALERT_RAISED = "alert.raised"
 ALERT_RESOLVED = "alert.resolved"
 DOCTOR_REPLIED = "doctor.replied"
+CALL_PLACED = "call.placed"
+CALL_FAILED = "call.failed"
 
 
 def on(event_name):

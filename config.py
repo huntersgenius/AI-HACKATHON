@@ -22,6 +22,13 @@ FEATURES = {
     "trend_chart": True,     # ready as of phase 9
     "sms_notifier": False,   # roadmap
     "multi_question": False,  # several questions in one day
+    # False by default on purpose: the seeded demo patients carry made-up
+    # phone_sim numbers, and every smoke-test run answers its way into a red
+    # alert. Turning this on without a real, cleared groupID would dial
+    # whoever actually owns those numbers. Flip on only once SMARTCALL_*
+    # below is configured with a real API key + groupID.
+    "call_notifier": False,
+    "push_notifications": True,
 }
 
 
@@ -89,6 +96,18 @@ class Config:
     TRIAGE_PROMPT = os.environ.get("TRIAGE_PROMPT", "triage_v1.txt")
     TRIAGE_CASE_PROMPT = os.environ.get(
         "TRIAGE_CASE_PROMPT", "triage_v1_case.txt")
+
+    # SmartCall (callmaster.uz) — automated voice-reminder calls.
+    SMARTCALL_API_URL = os.environ.get(
+        "SMARTCALL_API_URL", "https://smartcall.uz/web/api/v1")
+    SMARTCALL_API_KEY = os.environ.get("SMARTCALL_API_KEY", "")
+    SMARTCALL_GROUP_ID = os.environ.get("SMARTCALL_GROUP_ID", "")
+    SMARTCALL_TIMEOUT_SECONDS = _env_int("SMARTCALL_TIMEOUT_SECONDS", 10)
+
+    # Web Push (VAPID) — see scripts/generate_vapid_keys.py.
+    VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+    VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+    VAPID_CONTACT_EMAIL = os.environ.get("VAPID_CONTACT_EMAIL", "hamroh@example.uz")
 
     FEATURES = _resolve_features()
 

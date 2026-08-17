@@ -2,27 +2,38 @@
 <html lang="uz">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Hamroh{% endblock %}</title>
+
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hamroh">
+  <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen">
-  <header class="bg-white border-b border-slate-200">
-    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2">
+<body class="bg-slate-100 text-slate-900 min-h-screen pb-[env(safe-area-inset-bottom)]">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <a href="/" class="flex items-center gap-2 shrink-0">
         <span class="text-xl font-semibold text-teal-700">Hamroh</span>
-        <span class="text-xs text-slate-500">Kasalxonadan keyingi kuzatuv</span>
+        <span class="hidden sm:inline text-xs text-slate-500">Kasalxonadan keyingi kuzatuv</span>
       </a>
       {% block header_extra %}{% endblock %}
     </div>
   </header>
 
-  <main class="max-w-3xl mx-auto px-4 py-6">
+  <main class="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
     {% block content %}{% endblock %}
   </main>
 
   <script src="{{ url_for('static', filename='js/api.js') }}"></script>
   <script src="{{ url_for('static', filename='js/poll.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/push.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

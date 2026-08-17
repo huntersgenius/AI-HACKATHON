@@ -89,6 +89,73 @@
     trendEl.appendChild(caption);
   }
 
+  const callLogEl = document.getElementById("call-log");
+  const callNowBtn = document.getElementById("call-now");
+  const callErrorEl = document.getElementById("call-error");
+
+  const CALL_STATUS_LABEL = {
+    queued: "Navbatda",
+    pending: "Yuborilmoqda",
+    sended: "Yuborildi",
+    failed: "Xatolik",
+    cancelled: "Bekor qilindi",
+  };
+
+  function renderCall(call) {
+    const row = document.createElement("div");
+    row.className = "rounded-lg border border-slate-200 p-2 text-sm flex items-center justify-between gap-2";
+
+    const left = document.createElement("div");
+    left.textContent =
+      (CALL_STATUS_LABEL[call.status] || call.status) +
+      (call.trigger === "auto_red_alert" ? " · avtomatik" : " · qoʻlda") +
+      " · " + call.created_at;
+
+    const right = document.createElement("div");
+    right.className = "text-xs text-slate-500";
+    if (call.answered === 1) {
+      right.textContent = "Javob berildi" + (call.duration_seconds ? " (" + call.duration_seconds + "s)" : "");
+    } else if (call.answered === 0) {
+      right.textContent = "Javob berilmadi";
+    }
+
+    row.appendChild(left);
+    row.appendChild(right);
+    return row;
+  }
+
+  async function refreshCalls() {
+    if (!callLogEl) return;
+    const { calls } = await api.get("/api/v1/patients/" + patientId + "/calls");
+    callLogEl.innerHTML = "";
+    if (!calls.length) {
+      const empty = document.createElement("p");
+      empty.className = "text-sm text-slate-400";
+      empty.textContent = "Hozircha qoʻngʻiroq yoʻq.";
+      callLogEl.appendChild(empty);
+      return;
+    }
+    calls.forEach((call) => callLogEl.appendChild(renderCall(call)));
+  }
+
+  if (callNowBtn) {
+    callNowBtn.addEventListener("click", async () => {
+      callNowBtn.disabled = true;
+      callErrorEl.classList.add("hidden");
+      try {
+        await api.post("/api/v1/patients/" + patientId + "/calls", {
+          doctor_id: Number(doctorId),
+        });
+        await refreshCalls();
+      } catch (err) {
+        callErrorEl.textContent = err.message;
+        callErrorEl.classList.remove("hidden");
+      } finally {
+        callNowBtn.disabled = false;
+      }
+    });
+  }
+
   function showError(message) {
     errorEl.textContent = message;
     errorEl.classList.remove("hidden");
@@ -187,6 +254,7 @@
 
     renderHeader(detail);
     if (trend) renderTrend(trend);
+    if (callNowBtn) refreshCalls().catch(() => {});
 
     timelineEl.innerHTML = "";
     if (!timeline.items.length) {

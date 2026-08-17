@@ -2,8 +2,14 @@
 {% block title %}{{ patient['full_name'] }} — tafsilot{% endblock %}
 
 {% block header_extra %}
-  <a href="{{ url_for('pages.doctor_dashboard', did=patient['doctor_id']) }}"
-     class="text-sm text-teal-700 hover:underline">← Panelga qaytish</a>
+  <div class="flex items-center gap-3">
+    <a href="{{ url_for('pages.doctor_dashboard', did=patient['doctor_id']) }}"
+       class="text-sm text-teal-700 hover:underline whitespace-nowrap">← Panelga qaytish</a>
+    <button id="push-toggle" type="button"
+            class="shrink-0 text-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 hover:bg-slate-100">
+      🔕
+    </button>
+  </div>
 {% endblock %}
 
 {% block content %}
@@ -51,24 +57,45 @@
     </div>
   </section>
 
-  <section class="bg-white rounded-xl border border-slate-200 p-4">
+  <section class="bg-white rounded-xl border border-slate-200 p-4 mb-5">
     <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-2">
       Bemorga xabar yuborish
     </h2>
     <form id="reply-form" class="flex gap-2">
       <input id="reply-input" type="text" autocomplete="off"
-             class="flex-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+             class="flex-1 rounded-lg border border-slate-300 px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
              placeholder="Masalan: Bugun qabulga keling, jarohatni koʻramiz.">
       <button type="submit" id="reply-send"
-              class="rounded-lg bg-teal-600 text-white px-4 py-2 font-medium hover:bg-teal-700 disabled:opacity-50">
+              class="rounded-lg bg-teal-600 text-white px-5 py-3 font-medium hover:bg-teal-700 disabled:opacity-50">
         Yuborish
       </button>
     </form>
     <p id="detail-error" class="hidden text-sm text-red-600 mt-2"></p>
+  </section>
+
+  <section class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Ovozli qoʻngʻiroq
+      </h2>
+      <button id="call-now" type="button"
+              class="text-xs rounded-lg bg-amber-600 text-white px-3 py-2 font-medium hover:bg-amber-700 disabled:opacity-50">
+        📞 Hozir qoʻngʻiroq qilish
+      </button>
+    </div>
+    <div id="call-log" class="space-y-1">
+      <p class="text-sm text-slate-400" id="call-log-empty">Hozircha qoʻngʻiroq yoʻq.</p>
+    </div>
+    <p id="call-error" class="hidden text-sm text-red-600 mt-2"></p>
   </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/doctor_patient.js') }}"></script>
+<script>
+  if (window.HamrohPush) {
+    HamrohPush.init("doctor", {{ patient['doctor_id'] }}, "push-toggle");
+  }
+</script>
 {% endblock %}

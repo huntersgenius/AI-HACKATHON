@@ -20,12 +20,18 @@ from core.responses import ok
 HOOK_MODULES = [
     "hooks.analysis_hooks",
     "hooks.alert_hooks",
+    "hooks.call_hooks",
+    "hooks.push_hooks",
 ]
 ANALYZER_MODULES = [
     "analyzers.rule_analyzer",
     "analyzers.llm_analyzer",
 ]
-NOTIFIER_MODULES = []
+NOTIFIER_MODULES = [
+    "notifiers.in_app",
+    "notifiers.call_notifier",
+    "notifiers.push_notifier",
+]
 
 # (import path, url_prefix or None)
 BLUEPRINTS = [
@@ -34,6 +40,8 @@ BLUEPRINTS = [
     ("routes.patient_api:bp", "/api/v1/patients"),
     ("routes.doctor_api:bp", "/api/v1/doctors"),
     ("routes.alert_api:bp", "/api/v1/alerts"),
+    ("routes.call_api:bp", "/api/v1/patients"),
+    ("routes.push_api:bp", "/api/v1/push"),
 ]
 
 

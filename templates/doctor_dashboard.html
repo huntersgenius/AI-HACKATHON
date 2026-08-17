@@ -2,9 +2,15 @@
 {% block title %}{{ doctor['full_name'] }} — panel{% endblock %}
 
 {% block header_extra %}
-  <div class="text-right">
-    <div class="text-sm text-slate-700">{{ doctor['full_name'] }}</div>
-    <div class="text-xs text-slate-500">{{ doctor['clinic_name'] }}</div>
+  <div class="flex items-center gap-2 min-w-0">
+    <div class="text-right min-w-0">
+      <div class="text-sm text-slate-700 truncate">{{ doctor['full_name'] }}</div>
+      <div class="hidden sm:block text-xs text-slate-500 truncate">{{ doctor['clinic_name'] }}</div>
+    </div>
+    <button id="push-toggle" type="button"
+            class="shrink-0 text-xs rounded-lg border border-slate-300 bg-white px-2 py-1.5 hover:bg-slate-100">
+      🔕
+    </button>
   </div>
 {% endblock %}
 
@@ -59,7 +65,7 @@
         Tizim voqealari
       </h2>
       <button id="demo-reset"
-              class="text-xs rounded-lg border border-slate-300 px-3 py-1 hover:bg-slate-100">
+              class="text-xs rounded-lg border border-slate-300 px-3 py-2 hover:bg-slate-100">
         Demoni boshidan boshlash
       </button>
     </div>
@@ -74,4 +80,9 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/doctor_dashboard.js') }}"></script>
+<script>
+  if (window.HamrohPush) {
+    HamrohPush.init("doctor", {{ doctor['id'] }}, "push-toggle");
+  }
+</script>
 {% endblock %}
